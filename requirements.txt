@@ -1,0 +1,31 @@
+# Phase 1 — RAG pipeline dependencies
+
+# PDF parsing
+pdfplumber
+
+# LlamaIndex core + integrations
+llama-index-core
+llama-index-embeddings-huggingface
+llama-index-vector-stores-qdrant
+llama-index-llms-groq
+llama-index-retrievers-bm25
+llama-index-postprocessor-flag-embedding-reranker
+
+# Vector store
+qdrant-client
+
+# Evaluation
+ragas
+deepeval
+
+# Env
+python-dotenv
+
+# Phase 2 — Voice pipeline (Pipecat + LiveKit + Cartesia)
+pipecat-ai[silero,groq,cartesia,deepgram,livekit]
+
+# Phase 2 — API server
+fastapi
+uvicorn[standard]
+livekit-api
+pydantic>=2.0

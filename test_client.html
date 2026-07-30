@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RagFintechVoice — Test Client</title>
+  <script src="/livekit-client.umd.js"></script>
+  <style>
+    body { font-family: monospace; max-width: 700px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+    h2   { color: #7cf; }
+    input, button { padding: 8px 12px; margin: 4px; border-radius: 4px; border: 1px solid #555; background: #222; color: #eee; font-size: 14px; }
+    button { cursor: pointer; background: #2a4; border-color: #3b5; }
+    button:disabled { background: #333; border-color: #444; color: #666; cursor: default; }
+    #log  { background: #0a0a0a; border: 1px solid #333; padding: 12px; height: 300px; overflow-y: auto; font-size: 12px; white-space: pre-wrap; }
+    .ok   { color: #4f4; }
+    .err  { color: #f44; }
+    .info { color: #aaf; }
+    #status { font-size: 13px; margin: 8px 0; color: #fa0; }
+  </style>
+</head>
+<body>
+  <h2>RagFintechVoice — Voice Test Client</h2>
+
+  <div>
+    <label>Agent server URL:</label><br>
+    <input id="apiUrl" value="http://localhost:8001" style="width:260px">
+    <input id="identity" value="user-001" placeholder="identity" style="width:100px">
+    <input id="room"     value="rag-voice"  placeholder="room"     style="width:100px">
+  </div>
+  <br>
+  <button id="btnStart"  onclick="startSession()">Connect + Start Agent</button>
+  <button id="btnUnmute" onclick="unmute()" disabled style="background:#a42;border-color:#b53;">Unmute Bot Audio</button>
+  <button id="btnStop"   onclick="stopSession()" disabled>Disconnect</button>
+  <p id="status">Idle</p>
+  <div id="log"></div>
+
+  <script>
+    let room = null;
+    let localTrack = null;
+
+    function log(msg, cls='info') {
+      const d = document.getElementById('log');
+      const ts = new Date().toTimeString().slice(0,8);
+      d.innerHTML += `<span class="${cls}">[${ts}] ${msg}\n</span>`;
+      d.scrollTop = d.scrollHeight;
+    }
+
+    function setStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    async function startSession() {
+      document.getElementById('btnStart').disabled = true;
+      const apiUrl  = document.getElementById('apiUrl').value;
+      const identity = document.getElementById('identity').value;
+      const roomName = document.getElementById('room').value;
+
+      // 1. Start the agent
+      log('Starting agent in room "' + roomName + '"…');
+      try {
+        const r = await fetch(`${apiUrl}/agent/start?room=${roomName}`, { method: 'POST' });
+        const j = await r.json();
+        if (!r.ok && r.status !== 409) throw new Error(JSON.stringify(j));
+        log('Agent: ' + JSON.stringify(j), 'ok');
+      } catch(e) { log('Agent start error: ' + e, 'err'); }
+
+      // 2. Fetch a token
+      log('Fetching token…');
+      let token, lkUrl;
+      try {
+        const r = await fetch(`${apiUrl}/token?room=${roomName}&identity=${identity}`);
+        const j = await r.json();
+        token = j.token;
+        lkUrl = j.livekit_url;
+        log('Token received (' + token.slice(0,20) + '…)', 'ok');
+      } catch(e) { log('Token error: ' + e, 'err'); document.getElementById('btnStart').disabled=false; return; }
+
+      // 3. Create local mic track
+      log('Requesting microphone…');
+      try {
+        localTrack = await LivekitClient.createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true });
+        log('Mic acquired', 'ok');
+      } catch(e) { log('Mic error: ' + e, 'err'); document.getElementById('btnStart').disabled=false; return; }
+
+      // 4. Connect to LiveKit room
+      room = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+
+      room.on(LivekitClient.RoomEvent.Connected, () => { log('Connected to room "' + room.name + '"', 'ok'); setStatus('Connected — speak now!'); });
+      room.on(LivekitClient.RoomEvent.Disconnected, () => { log('Disconnected', 'err'); setStatus('Disconnected'); });
+
+      room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, pub, participant) => {
+        log(`Track subscribed from ${participant.identity}: kind=${track.kind}`, 'ok');
+        if (track.kind === LivekitClient.Track.Kind.Audio) {
+          log('Bot audio track received — attaching', 'ok');
+          const el = track.attach();
+          el.autoplay = true;
+          el.style.display = 'none';
+          document.body.appendChild(el);
+          // Try to play — may be blocked by autoplay policy
+          el.play()
+            .then(() => { log('Audio playback started!', 'ok'); setStatus('Connected — speak now!'); })
+            .catch(() => {
+              log('Autoplay blocked — click "Unmute Bot Audio" button', 'err');
+              setStatus('Click "Unmute Bot Audio" to hear the bot');
+              document.getElementById('btnUnmute').disabled = false;
+            });
+        }
+      });
+
+      room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track, pub, participant) => {
+        log(`Track unsubscribed from ${participant.identity}`, 'info');
+        track.detach();
+      });
+
+      room.on(LivekitClient.RoomEvent.ParticipantConnected, p => log('Participant joined: ' + p.identity, 'info'));
+      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, p => log('Participant left: ' + p.identity, 'info'));
+      room.on(LivekitClient.RoomEvent.ActiveSpeakersChanged, speakers => {
+        const names = speakers.map(s => s.identity).join(', ');
+        if (names) setStatus('Speaking: ' + names);
+      });
+
+      try {
+        await room.connect(lkUrl, token);
+        // startAudio() MUST be called from a user-gesture context (we're inside a click handler here)
+        // This primes the browser's audio context so bot audio plays without an extra click
+        await room.startAudio();
+        log('Audio context unlocked', 'ok');
+        await room.localParticipant.publishTrack(localTrack);
+        log('Mic published to room', 'ok');
+        setStatus('Connected — speak now!');
+      } catch(e) { log('Connect error: ' + e, 'err'); document.getElementById('btnStart').disabled=false; return; }
+
+      document.getElementById('btnStop').disabled = false;
+    }
+
+    async function unmute() {
+      if (room) {
+        await room.startAudio();
+        log('Audio context unlocked via Unmute button', 'ok');
+        setStatus('Connected — speak now!');
+        document.getElementById('btnUnmute').disabled = true;
+      }
+    }
+
+    async function stopSession() {
+      if (room) { await room.disconnect(); room = null; }
+      if (localTrack) { localTrack.stop(); localTrack = null; }
+      document.getElementById('btnStop').disabled = true;
+      document.getElementById('btnStart').disabled = false;
+      setStatus('Idle');
+      log('Session ended');
+    }
+  </script>
+</body>
+</html>

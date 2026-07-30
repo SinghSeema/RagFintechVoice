@@ -1,0 +1,29 @@
+# LlamaIndex persisted docstore — regenerate from raw PDFs, don't commit
+storage/
+
+# Qdrant Docker volume — regenerate from indexing, don't commit
+qdrant_storage/
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+.~lock.*#
+
+# Logs (runtime output — not source)
+logs/
+framelogs.txt
+VoiceAPI_output.txt

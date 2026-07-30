@@ -1,0 +1,31 @@
+[
+  {
+    "q_idx": 0,
+    "question": "What are the Officially Valid Documents (OVDs) accepted for individual KYC under RBI norms?",
+    "ground_truth": "The Officially Valid Documents (OVDs) for individual KYC are: passport, driving licence, Voter's Identity Card issued by the Election Commission of India, PAN card, Aadhaar letter or card issued by UIDAI, NREGA Job Card signed by a State Government official, and letter issued by the National Population Register containing name and address details. One OVD is required to establish identity and another for current address if both are not on the same document.",
+    "mode": "vector",
+    "answer": "The Officially Valid Documents (OVDs) accepted for individual KYC under RBI norms are:\n\n- Passport\n- Driving licence\n- Proof of possession of Aadhaar number\n- Voter's Identity Card issued by the Election Commission of India\n- Job card issued by NREGA duly signed by an officer of the State Government\n- Letter issued by the National Population Register containing details of name and address [2].",
+    "latency_ms": 20935.213764983928,
+    "path": "agentic",
+    "citations": [
+      "3. Definitions",
+      "8. Compliance of KYC policy"
+    ],
+    "top_score": 3.9010443687438965
+  },
+  {
+    "q_idx": 0,
+    "question": "What are the Officially Valid Documents (OVDs) accepted for individual KYC under RBI norms?",
+    "ground_truth": "The Officially Valid Documents (OVDs) for individual KYC are: passport, driving licence, Voter's Identity Card issued by the Election Commission of India, PAN card, Aadhaar letter or card issued by UIDAI, NREGA Job Card signed by a State Government official, and letter issued by the National Population Register containing name and address details. One OVD is required to establish identity and another for current address if both are not on the same document.",
+    "mode": "hybrid",
+    "answer": "Under RBI norms, Officially Valid Documents (OVDs) accepted for individual KYC include documents such as:\n\n- Passport\n- Driving License\n- PAN Card\n- Aadhaar Card\n- Voter's ID Card\n- NREGA Card\n- Job Card issued by NREGA\n- Letter issued by a Government Department\n- Letter issued by a Bank\n- Letter issued by a Registered Employer\n- Letter issued by a College/University\n- Proof of Residence in India\n\nThese documents can be verified through the DigiLocker platform or other digital means.",
+    "latency_ms": 13678.059688012581,
+    "path": "hybrid",
+    "citations": [
+      "rbi_kyc_master_direction | Pages 4–14 | 3. Definitions",
+      "3. Definitions",
+      "8. Compliance of KYC policy"
+    ],
+    "top_score": 3.9010443687438965
+  }
+]

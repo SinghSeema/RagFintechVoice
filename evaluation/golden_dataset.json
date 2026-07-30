@@ -1,0 +1,162 @@
+[
+  {
+    "question": "What are the Officially Valid Documents (OVDs) accepted for individual KYC under RBI norms?",
+    "ground_truth": "The Officially Valid Documents (OVDs) for individual KYC are: passport, driving licence, Voter's Identity Card issued by the Election Commission of India, PAN card, Aadhaar letter or card issued by UIDAI, NREGA Job Card signed by a State Government official, and letter issued by the National Population Register containing name and address details. One OVD is required to establish identity and another for current address if both are not on the same document.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Definition of Officially Valid Document",
+    "domain": "kyc_aml",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are the limits and conditions for a Small Account under RBI KYC norms?",
+    "ground_truth": "A Small Account is a savings account for customers who cannot provide OVDs. The conditions are: aggregate credits in a financial year must not exceed Rs 1,00,000; aggregate withdrawals and transfers must not exceed Rs 10,000 per month; balance at any point must not exceed Rs 50,000; foreign remittances are not permitted; and the account is valid for 12 months, extendable by another 12 months if the customer has applied for an OVD. After 24 months, the account cannot be continued without full KYC.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Small Accounts",
+    "domain": "kyc_aml",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the Video-based Customer Identification Process (V-CIP) and what are its key requirements?",
+    "ground_truth": "V-CIP is an alternate Customer Due Diligence method using a seamless live video interaction between the customer and an authorised official of the regulated entity. Key requirements: the interaction must be live and not pre-recorded; the customer's photograph must be captured from the video; the OVD must be visible and verified; a live location (geo-tag) of the customer must be captured; the customer must be in India at the time of V-CIP; the audio-video recording must be stored; and the process must be consent-based with the customer's explicit agreement recorded.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Video based Customer Identification Process (V-CIP)",
+    "domain": "kyc_aml",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are the beneficial ownership thresholds for companies, partnership firms, and trusts under RBI KYC Master Direction?",
+    "ground_truth": "Under RBI KYC Master Direction, the Beneficial Owner is the natural person who ultimately owns or controls the customer entity. The thresholds are: for companies, any natural person holding more than 25% shares or voting rights, or exercising control; for partnership firms, any partner holding more than 15% of capital or profits; for trusts, the beneficial owners are the trustee(s), settlor, protector, beneficiaries with 15% or more interest, and any other natural person exercising ultimate effective control. If no natural person meets the threshold for companies, the senior managing official is identified as the beneficial owner.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Beneficial Ownership",
+    "domain": "kyc_aml",
+    "difficulty": "hard"
+  },
+  {
+    "question": "How does the Central KYC Records Registry (CKYCR) work and what are the obligations of regulated entities?",
+    "ground_truth": "The Central KYC Records Registry (CKYCR) is a centralised depository of KYC records maintained by CERSAI. When a regulated entity completes KYC for a customer, it must upload the records to CKYCR within 3 days and receives a 14-digit KYC identifier for the customer. Regulated entities must search CKYCR before initiating CDD for a new customer. If a valid KYC record is found and is not older than the applicable updation period, no fresh KYC is required. Customers can give their 14-digit identifier to any regulated entity in lieu of submitting fresh KYC documents.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Central KYC Records Registry (CKYCR)",
+    "domain": "kyc_aml",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the frequency of periodic KYC updation for low, medium, and high risk customers?",
+    "ground_truth": "Under RBI KYC Master Direction, periodic KYC updation must be done at least once every 10 years for low risk customers, at least once every 8 years for medium risk customers, and at least once every 2 years for high risk customers. During updation, the regulated entity must re-verify the customer's identity and address documents. If a customer's risk category changes, the updation schedule of the new risk category applies going forward.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Periodic Updation of KYC",
+    "domain": "regulatory_qa",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What special KYC measures apply to Politically Exposed Persons (PEPs) under RBI Master Direction?",
+    "ground_truth": "Politically Exposed Persons are individuals who are or have been entrusted with prominent public functions in a foreign country, such as heads of state, senior politicians, senior government or judicial or military officials, senior executives of state-owned corporations, and important political party officials. Regulated entities must: obtain senior management approval before establishing or continuing a business relationship with a PEP; take reasonable measures to establish the source of wealth and funds; conduct enhanced ongoing monitoring of such relationships; treat all foreign PEPs as high risk; and apply the same measures to immediate family members and known close associates of PEPs.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Politically Exposed Persons",
+    "domain": "regulatory_qa",
+    "difficulty": "hard"
+  },
+  {
+    "question": "What are the three risk categories for customers under the risk-based approach in KYC and what determines each?",
+    "ground_truth": "Regulated entities must categorise customers into three risk levels. Low risk applies to customers with low income, limited transactions, and simple economic profiles such as salaried employees, pensioners, and self-help group members. Medium risk applies to customers not clearly falling into low or high risk categories. High risk applies to customers with unusually large cash transactions, high-risk jurisdictions, Politically Exposed Persons, non-resident customers, high-net-worth individuals with complex structures, shell companies, and businesses dealing in high-value assets. Regulated entities must document risk categorisation criteria in their Board-approved KYC policy.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Risk Categorisation",
+    "domain": "regulatory_qa",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What Customer Due Diligence documents are required for a proprietary concern?",
+    "ground_truth": "For a proprietary concern, the regulated entity must obtain: OVD of the proprietor to verify identity and address; proof of existence of the business such as a GST registration certificate, shops and establishment certificate, certificate or licence issued by municipal authority, SSI registration certificate, or income tax return of the concern filed in the proprietor's name; and PAN of the proprietor or the firm. Since the proprietor is the sole beneficial owner, no separate beneficial ownership declaration is required.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Customer Due Diligence for Proprietary Concerns",
+    "domain": "regulatory_qa",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What transactions by walk-in customers trigger full Customer Due Diligence requirements?",
+    "ground_truth": "Walk-in customers who do not have an account relationship with the regulated entity must undergo full Customer Due Diligence for: cash transactions amounting to Rs 50,000 or above; cross-border wire transfers of Rs 50,000 or above; purchase of prepaid payment instruments for Rs 50,000 or above; and any transaction or series of transactions that appear suspicious or unusual regardless of the amount involved. For transactions below these thresholds, the regulated entity may collect only the customer's name and address.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Customer Due Diligence for Walk-in Customers",
+    "domain": "regulatory_qa",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What action must a bank take if an existing customer refuses to provide updated KYC documents during periodic updation?",
+    "ground_truth": "If an existing customer does not provide updated KYC information despite reminders, the regulated entity must first issue notices and reminders with a reasonable deadline. If the customer still does not comply, the entity may partially freeze the account — allowing credits but blocking debit transactions other than for account closure. After a further prescribed period of non-compliance and additional notice, the account may be fully frozen. The regulated entity must file a Suspicious Transaction Report with the Financial Intelligence Unit if the refusal itself appears suspicious. Accounts cannot be closed arbitrarily without following due process.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Freezing of Accounts / Non-Cooperative Customers",
+    "domain": "customer_support",
+    "difficulty": "hard"
+  },
+  {
+    "question": "For how long must regulated entities retain KYC and transaction records under RBI KYC Master Direction?",
+    "ground_truth": "Under RBI KYC Master Direction and the Prevention of Money Laundering Act, regulated entities must maintain KYC and account opening records for at least 5 years after the business relationship ends or the account is closed. Transaction records must be maintained for at least 5 years from the date of the transaction. For walk-in customers, records must be maintained for 5 years from the date of the transaction. All records must be maintained in a form that can be retrieved and made available to law enforcement agencies on request.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Record Management",
+    "domain": "customer_support",
+    "difficulty": "easy"
+  },
+  {
+    "question": "Can a Non-Resident Indian (NRI) complete KYC without visiting an Indian bank branch?",
+    "ground_truth": "Yes, NRIs can complete KYC without a branch visit through: V-CIP (video-based identification), which is available to NRIs located outside India subject to conditions including live video, OVD display, face matching, and geo-tagging; the non-face-to-face route using certified true copies of OVDs attested by a notary public, the Indian Embassy or Consulate or High Commission abroad, or apostille for countries under the Hague Convention; or through a correspondent bank or an authorised representative. Documents submitted must be current, legible, and appropriately attested.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Non-Face-to-Face Customers",
+    "domain": "customer_support",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What simplified KYC measures are permitted for low-risk customers?",
+    "ground_truth": "For low-risk customers, regulated entities may apply simplified due diligence measures including: accepting a single OVD that contains both identity and address information; allowing self-certification for minor updates such as change of address; reducing the KYC updation frequency to once in 10 years; using CKYCR records without requesting fresh documents when a valid KYC identifier exists and is current; and accepting a bank account statement as an address proof. Products for low-risk customers such as small accounts may have transaction limits but the KYC process itself is simplified proportionally.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Simplified Measures / Risk-based Approach",
+    "domain": "customer_support",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is Enhanced Due Diligence (EDD) and which customer categories require it?",
+    "ground_truth": "Enhanced Due Diligence involves additional measures beyond standard CDD applied to higher-risk customers and relationships. EDD is required for: Politically Exposed Persons and their family members and close associates; customers from or transacting with FATF high-risk and non-cooperative jurisdictions; customers with unusually large or complex transactions with no apparent economic purpose; non-resident customers; shell companies or trusts with nominee shareholders; businesses in high-risk sectors such as money services, arms dealers, or casinos; and any customer or transaction flagged as suspicious. EDD measures include obtaining senior management approval, identifying source of wealth and funds, more frequent transaction monitoring, and enhanced KYC updation cycles.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Enhanced Due Diligence",
+    "domain": "customer_support",
+    "difficulty": "hard"
+  },
+  {
+    "question": "What KYC documents are required to open a bank account for a partnership firm?",
+    "ground_truth": "For a partnership firm, the regulated entity must obtain: the registration certificate if the firm is registered under the Indian Partnership Act; the partnership deed; OVDs for the partners who are authorised to operate the account; a declaration identifying any partner holding more than 15% of the capital or profits as a beneficial owner, with those partners undergoing full CDD; and the PAN of the firm. If the firm is unregistered, a declaration from the managing partner confirming this must be obtained. The beneficial owners (partners above 15% threshold) must be identified and verified.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Customer Due Diligence for Partnership Firms",
+    "domain": "loan_credit",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What KYC documents are required for a private limited company opening a current account?",
+    "ground_truth": "For a private limited company, the regulated entity must obtain: Certificate of Incorporation issued by the Registrar of Companies; Memorandum of Association and Articles of Association; Board Resolution authorising account opening and naming the authorised signatories; a list of current directors; OVDs of all authorised signatories and at least two directors; beneficial ownership declaration identifying shareholders holding more than 25% of shares or voting rights, with those shareholders undergoing full CDD; PAN of the company; and proof of the registered office address. If no individual shareholder crosses the 25% threshold, the senior managing official must be identified as the beneficial owner.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Customer Due Diligence for Companies",
+    "domain": "loan_credit",
+    "difficulty": "medium"
+  },
+  {
+    "question": "Does an existing bank customer need to provide fresh KYC documents when applying for a new loan product?",
+    "ground_truth": "An existing customer with a current and valid KYC on record does not need to submit fresh KYC documents when applying for a new product or service with the same regulated entity, provided the documents are not expired, the address has not changed, and the customer's risk category has not changed. The regulated entity may, however, request updated documents if the existing KYC is older than the applicable updation period for that customer's risk category — 10 years for low risk, 8 years for medium risk, and 2 years for high risk. For new-to-bank customers, full CDD is always required before any account or loan is opened.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Periodic Updation / Customer Due Diligence",
+    "domain": "loan_credit",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are the KYC requirements when opening an account for a trust?",
+    "ground_truth": "For a trust opening a bank account, the regulated entity must obtain: the registration certificate of the trust if registered under any Act; the trust deed; OVDs for the trustees authorised to operate the account; a resolution of the trustees to open and operate the account; and beneficial ownership identification and CDD for all trustees, the settlor, the protector if any, and beneficiaries holding 15% or more interest in the trust assets. All identified beneficial owners must undergo full CDD. The trustee must sign a declaration regarding beneficial ownership structure.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Customer Due Diligence for Trusts",
+    "domain": "loan_credit",
+    "difficulty": "hard"
+  },
+  {
+    "question": "What KYC steps must a bank follow when a company changes its authorised signatories?",
+    "ground_truth": "When a company or other legal entity changes its authorised signatory, the regulated entity must obtain: an updated Board Resolution or equivalent authority document naming the new signatory; OVD of the new signatory for full identity and address verification; and a confirmation or updated declaration confirming whether the beneficial ownership has changed. If beneficial ownership has changed, updated beneficial ownership information and CDD for the new beneficial owner must be obtained. The new signatory must not be permitted to operate the account until identity verification is complete. The account's risk category must be reviewed if the change in signatories or ownership structure warrants it.",
+    "reference_doc": "rbi_kyc_master_direction.pdf",
+    "reference_section": "Changes in KYC Information / Authorised Signatories",
+    "domain": "loan_credit",
+    "difficulty": "hard"
+  }
+]

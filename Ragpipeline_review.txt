@@ -1,0 +1,176 @@
+Review the RAG voice pipeline for a fintech voice assistant (RBI regulatory compliance chatbot). I've already analyzed the logs and found critical issues — please review the code for the specific bugs below and any additional problems you find.
+
+## Critical issues to review
+
+### 1. Reranker latency catastrophe (26–30 seconds)
+From the logs: `rerank: top-5 of 15 elapsed=26098ms` and `elapsed=30165ms`. The BGE cross-encoder is taking 26-30 seconds for just 15 nodes. This makes the system unusable. Look at `src/retrieval/pipeline.py` (the `build_pipeline` function, `FlagEmbeddingReranker` config) and `src/generation/rag_chain.py` (where `reranker.postprocess_nodes()` is called). Investigate why it's this slow and what can be done.
+
+### 2. Intent classifier misclassification — FINANCE for non-finance
+From the logs:
+```
+question: 'okay okay wait so let me know like what is what is one thing I can adopt in my daily routine to make my day becoming more productive'
+→ Classifier | FINANCE
+question: 'Okay, tell me about one thing that I can adopt to make my day better.'
+→ Classifier | FINANCE
+```
+Both are clearly non-finance (personal productivity), yet classified as FINANCE. Review the `_CLASSIFIER_PROMPT` in `src/voice/pipeline.py` (lines ~149–194). The prompt has a tiebreaker: "When uncertain between FINANCE and CHAT, always choose FINANCE. Any message with a question mark, a topical noun, or a request for information is FINANCE." This is too broad — "daily routine", "productive" are topical nouns but not finance topics. These should be BLOCKED.
+
+### 3. Score filter keeps ALL noise nodes
+From logs for KYC query: scores are `-1.4167, -2.5822, -2.6027, -2.7166, -2.8582`. Current filter: `score >= top_score - 5.0` = `>= -1.4167 - 5.0 = >= -6.4167`. ALL nodes pass this filter. For productivity query: scores `-8.1297, -8.3871, -9.4181, -9.7611, -10.0868` — filter threshold is `>= -13.1297`, all 5 pass. Very negative scores indicate ALL nodes are likely noise for the off-topic query. Review `src/generation/rag_chain.py` lines 204–209.
+
+### 4. LLM answers "I don't have sufficient information" despite relevant nodes
+For the KYC query, reranked nodes [1], [3] are from correct chapter/section (`Chapter VI – CDD Procedure`), yet the LLM says "I don't have sufficient information about the specific documents required for individual KYC". The `_VOICE_QA_TEMPLATE` in `src/generation/rag_chain.py` says "If the sources only partially cover the topic, summarise what they do contain." — but the model still refuses. Check if this is a prompt issue or if the 256-token citation chunks from `CitationQueryEngine(citation_chunk_size=256)` are too small.
+
+### 5. Concurrent query processing race condition
+From logs, queries overlap in time:
+```
+11:53:44 RAG | retrieve for one query (still running)
+11:54:10 new TranscriptionFrame arrives
+11:54:15 RAG | rerank for FIRST query completes (30s later!)
+11:54:16 FIRST query TTS pushed
+11:54:17 SECOND query classifier done
+```
+The `ThreadPoolExecutor(max_workers=1)` in `RAGProcessor` should serialize queries — but look at `src/voice/pipeline.py` lines 385, 453–466. Is there a risk of a new question being queued while the old one is still running? What happens to the user experience?
+
+### 6. Merged nodes missing chapter metadata
+From logs: `chapter='?'` for merged=True nodes. This means the metadata propagation in `src/ingestion/chunker.py` (the parent ancestry walk starting at line 140) is not working after storage reload — the fast path (line 93–97) loads from disk but the metadata was propagated to in-memory nodes that may not have been persisted correctly. Check if `docstore.add_documents(all_nodes)` updates the already-added parent nodes or if the metadata propagation (line 140–155) happens AFTER `docstore.add_documents()` (line 133).
+
+## Files to review
+
+- `src/voice/pipeline.py` — classifier prompt, RAGProcessor, TTS chunker
+- `src/generation/rag_chain.py` — score filter, CitationQueryEngine config, prompts
+- `src/retrieval/pipeline.py` — FlagEmbeddingReranker config
+- `src/ingestion/chunker.py` — metadata propagation, persistence order
+
+## Expected output
+
+For each issue: (a) confirm or refute the root cause I described, (b) show the specific lines, (c) give a concrete fix recommendation. Also flag any additional bugs you find.
+
+Here are the key file contents to review:
+
+### src/voice/pipeline.py (classifier section, lines 149-273)
+The `_CLASSIFIER_PROMPT` has the tiebreaker at line 190-192:
+```
+IMPORTANT: When uncertain between FINANCE and CHAT, always choose FINANCE.
+Any message with a question mark, a topical noun, or a request for information
+is FINANCE — not CHAT.
+```
+The BLOCKED category (lines 180-192) doesn't include general self-improvement, lifestyle, productivity topics.
+
+### src/generation/rag_chain.py (score filter, lines 204-209)
+```python
+top_score = reranked[0].score if reranked else 0.0
+positive_nodes = [n for n in reranked if n.score >= top_score - 5.0] or reranked[:1]
+```
+When top_score=-1.4, threshold=-6.4 keeps all 5 nodes. When top_score=-8.1, threshold=-13.1 keeps all 5 nodes.
+
+### src/ingestion/chunker.py (metadata propagation order, lines 130-159)
+```python
+# Layer 2: chunk-level metadata on leaf nodes (in-place)
+if section_map is not None:
+    enrich_nodes(leaf_nodes, full_text, section_map, chapter_map)
+
+# Store ALL nodes — AutoMergingRetriever needs parents at query time
+docstore = SimpleDocumentStore()
+docstore.add_documents(all_nodes)   # <-- adds nodes WITHOUT metadata
+
+# Propagate chapter + section_title from leaf → parent/mid nodes.
+node_index: dict = {n.node_id: n for n in all_nodes}
+for leaf in leaf_nodes:
+    ...  # modifies in-memory node objects
+storage_context = StorageContext.from_defaults(docstore=docstore)
+```
+The docstore is built at line 133-134, THEN metadata is propagated at lines 140-155. The docstore already has references to the node objects, so in-memory mutation SHOULD propagate if docstore stores references (not copies). But verify this assumption.
+
+### src/retrieval/pipeline.py
+```python
+reranker = FlagEmbeddingReranker(
+    model=reranker_model,   # "BAAI/bge-reranker-base"
+    top_n=reranker_top_n,
+)
+```
+No `use_fp16`, `batch_size`, or `device` parameters set. The cross-encoder runs default config.
+
+
+
+
+
+RAG answer quality still poor: The answer is vague because the retrieved nodes are about "Updation / Periodic Updation of KYC" (section 38) rather than the initial KYC documents. The question "what documents are needed for individual KYC?" is about onboarding/initial KYC, but the retrieved nodes are about updating KYC. This is a retrieval quality problem - the chunks being retrieved are wrong.
+
+Looking at the scores:
+
+All scores are negative (-2.26 to -3.89) - all below the absolute floor of -4.0...
+Wait, I need to reconsider the filtering logic. The top score is -2.26, which is actually above -4.0, so all five nodes would pass both the relative and absolute threshold filters since they're all greater than -4.0.
+
+The real issue here is that the retrieved chunks are about KYC updates rather than the initial onboarding documents—the sections containing the list of officially valid documents are elsewhere in the document. The LLM is correctly recognizing this mismatch and noting that the retrieved content doesn't explicitly mention the specific documents needed, yet it's still generating a lengthy response despite this fundamental retrieval problem.
+
+Looking at the rerank performance, it's taking 17 seconds total because the reranker is processing 15 nodes in 4 batches of 4 items each, with each batch taking about 3 seconds. The voice QA template also needs to be more concise and should avoid verbose citation formatting like "Source 2 and Source 4 mention that..." The original was 26-30 seconds, now it's down to 17 seconds with the batch optimization, but that's still not a meaningful improvement. The real issue is that bge-reranker-base is fundamentally slow on CPU regardless of batch size. I'm looking at a patched version that explicitly configures the reranker to use CPU with FP16 precision...
+
+Configuring reranker settings...
+
+The bottleneck is clear—I need to either switch to a smaller model like bge-reranker-small, reduce the number of candidates fed into the reranker from 15 down to 8-10, or skip reranking altogether. For the voice pipeline specifically, cutting similarity_top_k to 8-10 would mean fewer batches to process and a meaningful speedup.
+
+Now looking at the interruption handling issue—when allow_interruptions=True, the problem is that a long-running RAG query can still complete and push results downstream even after the user has started asking a new question. Since the executor only has one worker, new transcription frames get queued behind the old RAG operation, creating a race condition where stale results contaminate the new query.
+
+For the vague answers, I'm noticing the LLM actually does find relevant information from the sources—it identifies self-declaration mentions and KYC process details—but it's being overly verbose and hedging instead of synthesizing a direct answer from what it found.
+
+Now I'm realizing there's a template mismatch: the voice mode should use a template that strips citations and keeps things conversational, but the output still includes "Source 2 and Source 4 mention..." phrasing, which suggests either the voice template isn't being applied correctly or the system prompt is overriding it. The template itself explicitly says no citation numbers, yet the model is substituting "Source N" references instead of just stating the information naturally.
+
+There's also a conflict between the RAG system prompt's Rule 4 (which mandates citation format like [1], [2]) and the voice template's requirement for no citations at all. Beyond that, the reranker is still taking 17 seconds, and I need to handle the interruption issue by canceling in-flight queries when new questions come in. about what to actually fix now:
+
+Issue 1 - Vague answers:
+
+The retrieval is finding sections about KYC updates (section 38) instead of KYC initial document requirements
+This is a corpus/retrieval problem that can't be easily fixed without re-ingestion or better query routing
+BUT the voice answer format is still wrong - "Source 2 and Source 4 mention that" is not voice-friendly
+The system prompt Rule 4 (cite source numbers) conflicts with voice template's "no citation numbers"
+Fix: Make the voice QA template more forceful, or add a mode-aware instruction to the system prompt
+Issue 2 - Interruptions:
+
+allow_interruptions=True stops TTS but doesn't cancel in-flight RAG
+Need to cancel the pending future when a new TranscriptionFrame arrives
+The cleanest approach is to update the voice template with explicit instructions to synthesize answers naturally without source references, since the system prompt applies globally and doesn't have visibility into voice mode. I'll add language telling it to speak directly about findings and avoid "Source N says" phrasing entirely, plus handle cases where the retrieved information is tangentially related rather than directly answering the question.
+For the reranker latency, reducing the candidate pool from 15 to 8 or 10 in voice mode should help with response time.
+
+The core issue is that the system prompt's citation rule conflicts with the voice template's instruction to avoid citations—the system prompt takes precedence. I need to move the citation instruction out of the system prompt and into the text-only template, so voice mode can properly suppress citations. I also need to strengthen the voice template's synthesis directive and add cancellation logic for in-flight RAG queries.
+
+For latency, I'll reduce the similarity search depth from 15 to 8 specifically in voice mode. Now I'm thinking through what changes to communicate to the user and which fixes to prioritize.
+
+Let me read the current state of the affected files before making changes.
+
+Read pipeline.py (lines 71-90)
+Read hybrid_retriever.py (lines 59-78)
+Now I can see the issues clearly:
+
+Vague answers: The _RAG_SYSTEM_PROMPT Rule 4 ("Always cite the source number [1], [2]...") is conflicting with the _VOICE_QA_TEMPLATE's "no citation numbers" instruction. The LLM is substituting "Source N" style references instead. The fix is to remove Rule 4 from the system prompt (let it be driven by the QA template).
+
+Reranker latency: Still 17 seconds despite the patch.
+
+The batch size of 4 means I'm processing 15 nodes across roughly 4 batches at about 3 seconds each. The real bottleneck is similarity_top_k=15 being hardcoded for voice mode in _load_rag_stack — I should drop that to 8 to cut down the candidates being reranked.
+
+Interruptions: allow_interruptions=True handles TTS interruption but doesn't cancel in-flight RAG queries. Need to implement pending future cancellation.
+Let me check the pipeline configuration around line 588 to see the current similarity_top_k setting.
+
+Looking at the retriever and reranker setup, voice mode is pulling 15 candidates and reranking the top 5. Reducing similarity_top_k to 8 would cut the reranker workload roughly in half.
+
+So my plan is to remove the citation instruction from the system prompt since it conflicts with voice mode — that should only live in the text template — and then reduce similarity_top_k from 15 to 8 in the voice pipeline to speed up reranking.
+
+I also need to add cancellation tracking in RAGProcessor to handle interruptions cleanly.
+
+Two clear root causes. Let me fix both.
+
+Issue 1 — Vague voice answers: _RAG_SYSTEM_PROMPT Rule 4 says "Always cite the source number [1], [2]..." — this overrides the voice template's "no citation numbers" instruction. The LLM substitutes "Source 2 and Source 4 mention that..." instead. Also the reranker is still pulling chunks from the KYC update section (§38) rather than the initial document list — the voice similarity_top_k=15 sends too many loosely-related candidates into the reranker.
+
+Issue 2 — Interruptions: allow_interruptions=True stops TTS audio but does NOT cancel the in-flight 17s RAG query. The old answer still gets pushed when the query completes, speaking over the new question.
+
+Update Todos
+
+Remove Rule 4 (cite source numbers) from _RAG_SYSTEM_PROMPT
+
+Reduce voice similarity_top_k from 15 to 8 to cut reranker candidates
+
+Add pending future cancellation for interruption handling
+Fix 1 — Remove Rule 4 from system prompt (citation instruction belongs in the QA template, not globally):
+
+Edit hybrid_retriever.py
+Modified
